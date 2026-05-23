@@ -390,8 +390,12 @@ class _CommandInput(QPlainTextEdit):
     def keyPressEvent(self, event):
         key = event.key()
 
-        # Ctrl+Enter → send
-        if key in (Qt.Key_Return, Qt.Key_Enter) and event.modifiers() & Qt.ControlModifier:
+        # Enter → send (Shift+Enter → insert newline)
+        if key in (Qt.Key_Return, Qt.Key_Enter):
+            if event.modifiers() & Qt.ShiftModifier:
+                # Shift+Enter → newline, let default handler insert it
+                super().keyPressEvent(event)
+                return
             self.send_requested.emit()
             return
 
@@ -3750,7 +3754,7 @@ class AIChatPanel(QWidget):
         self._input.set_commands(load_commands(), builtin_factory=self._get_active_builtins)
         self._input.send_requested.connect(self._send)
         self._input.builtin_action_requested.connect(self._on_builtin_action)
-        self._input.setPlaceholderText("Type message… (Ctrl+Enter to send, / for commands)")
+        self._input.setPlaceholderText("输入消息… (Enter 发送, Shift+Enter 换行, / 斜杠命令)")
         self._input.setMinimumHeight(60)
         self._input.installEventFilter(self)
 
