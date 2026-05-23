@@ -3742,7 +3742,6 @@ class AIChatPanel(QWidget):
         self._sys_prompt = QPlainTextEdit()
         self._sys_prompt.setPlaceholderText("System prompt (optional)")
         self._sys_prompt.setMaximumHeight(48)
-        self._sys_prompt.setFont(QFont("Monospace", 9))
 
         # ══════════════════════════════════════════════════════════════
         # ROW 4: User input + Send (tall) / Stop (short) stacked right
@@ -3753,7 +3752,6 @@ class AIChatPanel(QWidget):
         self._input.builtin_action_requested.connect(self._on_builtin_action)
         self._input.setPlaceholderText("Type message… (Ctrl+Enter to send, / for commands)")
         self._input.setMinimumHeight(60)
-        self._input.setFont(QFont("Monospace", 10))
         self._input.installEventFilter(self)
 
         self._send_btn = QPushButton("发送")
@@ -4688,17 +4686,19 @@ class AIChatPanel(QWidget):
         return {**EDITOR_DEFAULTS, **self._load_state().get("editor", {})}
 
     def _apply_ui_font(self):
-        """Apply the UI font size setting to the panel via setFont.
-
-        setFont is safe to call at any time — it queues a font-change event
-        that propagates to child widgets during the next event-loop cycle.
-        """
-        from qtpy.QtGui import QFont
+        """Apply the UI font size setting to the panel and input fields."""
         cfg = self._editor_cfg()
         pt = cfg.get("fs_ui", 9)
         font = QFont()
         font.setPointSize(pt)
         self.setFont(font)
+
+        # Also update input fields that have hardcoded setFont() calls
+        # which would otherwise override the parent font propagation.
+        if hasattr(self, "_input"):
+            self._input.setFont(QFont("Monospace", pt + 1))
+        if hasattr(self, "_sys_prompt"):
+            self._sys_prompt.setFont(QFont("Monospace", pt))
 
     def _agentic_cfg(self):
         raw = dict(self._load_state().get("agentic", {}))
