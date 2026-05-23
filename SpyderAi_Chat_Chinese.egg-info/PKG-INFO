@@ -1,0 +1,320 @@
+Metadata-Version: 2.4
+Name: SpyderAi-Chat-Chinese
+Version: 0.8.8
+Summary: OpenAI-compatible AI chat pane + FIM completion for Spyder 6 — 中文汉化版
+Author: Maciej Piecko
+License-Expression: MIT
+Project-URL: Homepage, https://sourceforge.net/projects/spyder-ai-chat-plugin/
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: spyder>=6.0
+Dynamic: license-file
+
+# Spyder IDE AI Chat Plugin
+
+An OpenAI-compatible AI chat panel for **Spyder 6.x**.
+Connect to **12 providers** — OpenAI, Groq, Mistral, DeepSeek, Together AI, Fireworks AI, OpenRouter, Azure OpenAI, Ollama, LM Studio, vLLM, or any custom OpenAI-compatible endpoint — all from inside your IDE, without switching windows.
+
+© 2026 Maciej Piecko — MIT License
+
+---
+
+## What's new in 0.8.8
+
+- **Collapsible agentic action pairs** — completed assistant+agentic-output pairs are automatically collapsed into the assistant title row; the label shows **"Agentic: Read file, Git command ▶"** (dark-yellow); clicking expands both blocks; consecutive runs of 2+ pairs are grouped under one label with repeat counts (e.g. **"Agentic: Git command ×2 ▶"**); applies to both history loads and live streaming; delete buttons hidden while collapsed
+- **Agentic collapse — live grouping shake fixed** — when a second consecutive agentic pair arrived during streaming the chat briefly shook (content flashed then re-collapsed) because the grouping logic removed and re-inserted the summary label on every update; replaced with surgical in-place extension: the existing collapse group grows by appending new widgets to the same list the toggle closure already holds, and the label text is updated via `setText()`; zero visual artifact
+- **Fence parser — infinite loop on spaces in fence tag fixed** — any fence tag containing a space (e.g. `` ```grep:SHOW TABLES ``, `` ```file:path/with spaces.py ``) caused `parse_blocks()` to loop forever, making Spyder completely unresponsive; fixed by widening the fence-opening regex capture group from `\S*` to `(\S[^\n]*?|)` so the full tag including embedded spaces is accepted; a secondary defensive guard was also added to ensure any `` ``` ``-starting line that still fails the regex advances the parser rather than spinning in place
+- **Blockquote rendering fix** — the `>` markdown blockquote no longer shows a doubled vertical accent line; fixed by replacing the `QFrame border-left` approach with a plain `QWidget` + a separate 3 px coloured child widget; nested fenced code blocks inside blockquotes now render as full syntax-highlighted code block widgets
+- **Plugin logo in Settings dialog** — the plugin logo is now displayed at the bottom of the tab-bar column in the Settings dialog; embedded in the package under `spyder_ai_chat/resources/` and available after `pip install` without extra files; position is recomputed on resize
+- **Git bar disabled by default** — the git status bar is now off by default for new installs; users enable it once they have confirmed git is on their system
+- **Git availability check on enable** — ticking "Show Git status bar" in Settings → ⎇ Git bar immediately validates git via `shutil.which("git")` (no subprocess, no blocking, no console flash on Windows); a green **"✓ git found in PATH"** label appears if git is found; if not, a red warning is shown and the checkbox is automatically unchecked; the check also runs at dialog open time when the setting is already enabled
+
+## What's new in 0.8.7
+
+- **Settings — light theme support** — resolved multiple elements that showed a black box or were invisible in Spyder's light UI theme: Context tab warning boxes, Agentic tab full-autonomy warning, Commands tab built-in commands group, Connection tab title label, autonomous mode behaviour matrix popup, and the agentic system prompt preview textarea; all colours now adapt via a `_is_dialog_dark()` helper
+- **Table rendering — height fix** — LLM table responses no longer stretch to the full chat window height when no vertical scrollbar is visible; root cause was `showEvent` firing before the viewport had a valid width, producing an enormous document height from `setTextWidth(0)`; fixed with a `w ≤ 0` guard and a `Preferred` vertical size policy
+- **Manual mode — inspection output panel** — executing a `read:`/`ls:`/`grep:` fence via the batch dialog in Manual mode now shows the per-block output panel with **"📤 Send to LLM"** / **"✕ Dismiss"** buttons; previously the result was silently discarded
+- **Manual mode — git output panel** — confirming a `run:git` fence in Manual mode now shows the git output panel with **"📤 Send to LLM"** / **"✕ Dismiss"** buttons; previously git output was auto-sent without user control in all modes
+- **Manual mode — modifying action results auto-sent** — `file:`, `patch:`, `delete:`, `rename:`, and `install:` results confirmed in Manual mode are now forwarded to the LLM automatically; only `read:`/`ls:`/`grep:` and `run:git` results stay under user control via the output panel
+- **"📤 Send to LLM" on git panel — sends immediately** — the button now calls `auto_send_fn` (adds tag + fires `_send()`); previously it only added an attachment tag without triggering a send
+- **Autonomous mode matrix — git row** — git has its own row: Manual = "panel → user decides"; Semi/Full = "auto-sent ✓"; previously incorrectly grouped under Modifying with "auto-sent ✓" for Manual mode
+- **Git output panel — text always visible** — changed from `NoWrap` to `WidgetWidth` wrap mode and added a 52 px minimum height floor; previously a long output line (e.g. LF→CRLF warning) caused the horizontal scrollbar to consume the full widget height, hiding all text
+- **Editor keyboard shortcuts** — **Ctrl+Shift+A** adds the current file to the AI Chat context; **Ctrl+Shift+Q** adds the current text selection; both are scoped to the editor so they don't conflict with the rest of Spyder; shortcut hints also appear in the right-click AI Chat submenu
+
+## What's new in 0.8.6
+
+- **Dynamic agentic system prompt** — the system prompt injected into each chat is now assembled at send time from only the fence types enabled in Settings → 🤖 Agentic; the LLM is never told about fences it cannot use; a user who enables only `patch:` and `read:` receives a prompt describing only those two fences
+- **Mode-aware prompt wording** — the injected prompt adapts to the selected autonomous mode: the preamble correctly describes confirmation behaviour, git output forwarding, delete/rename confirmation vs. silent execution, and the inspection-fence discipline paragraph, all based on the actual mode in use
+- **Missing delete / rename fences in system prompt — fixed** — `delete:`, `delete_dir:`, `rename:`, and `rename_dir:` fences were implemented but never mentioned in the agentic system prompt so the LLM did not know they existed; they now appear as conditional sections whenever the respective fence is enabled
+- **Settings: read-only agentic prompt preview** — the editable textarea in Settings → 🤖 Agentic is replaced by a collapsible read-only preview that shows the exact prompt that will be injected; the preview updates live as fence checkboxes or the autonomous mode radio button are toggled
+- **Agentic action widget — no blank body for delete / rename fences** — `delete:`, `delete_dir:`, `rename:`, and `rename_dir:` action blocks no longer show an empty text area below the header; the target is already fully described in the header row
+- **Chat history paging** — chats longer than 120 messages are now split into pages; a centered `<<` / `<` / numbered / `>` / `>>` navigation bar appears below the chat area; the current page button is highlighted in blue; opening a long saved chat lands on the last (newest) page with scroll anchored to the bottom; navigating to an earlier page scrolls to the top; page navigation uses the same batched-load pipeline with a "Page N loading… N%" progress overlay; the page bar stays hidden for chats with 120 or fewer messages (no behavioural change)
+- **Incremental chat history loading** — history now loads in batches of 12 messages with an event-loop yield between each batch, keeping the application interactive (scrollable, closable, resizable) while a large chat loads; a "Loading chat… N%" progress overlay tracks progress; before this change the UI froze completely for the entire load duration
+- **Chat scroll height — long-chat sizeHint fix** — blank space that appeared below the last message after loading a chat with 100+ messages is now gone; paging caps rendered widgets to 120 per page, keeping Qt's internal sizeHint cache reliable
+- **Patch diff line numbers** — `patch:` action blocks in the chat, the single-action confirm dialog, and the batch confirm dialog now show line numbers on the left border of the diff view; two gutter columns display old-file (left) and new-file (right) line numbers, parsed from `@@` hunk headers to show real file positions; `@@` hunk rows now display the full `@@ -N,M +P,Q @@` header text instead of the former `──────────────` placeholder; gutter width auto-sizes to the widest line number in the diff
+- **Patch application correctness** — `_apply_unified_diff` now verifies that file content at the computed position matches the expected hunk context before applying; stale LLM-generated line numbers no longer silently corrupt unrelated lines; falls back to content-based fuzzy search when verification fails and recalibrates the running line-number offset for all subsequent hunks
+- **Python indentation preservation in patches** — when the fuzzy search path is used, context lines (unchanged lines surrounding the edit) are taken from the FILE's original content verbatim rather than from the diff; prevents the LLM's slightly-wrong context indentation from overwriting correct Python indentation in the patched file — Python code is particularly sensitive since indentation is semantic
+- **Chat scroll height — bug fix** — fixed ~950 px of blank space at the bottom of the chat area appearing after a streaming response finished; root cause was `QScrollArea` processing `updateGeometry()` asynchronously; fixed by synchronously resizing the content widget immediately after removing the streaming label
+
+## What's new in 0.8.5
+
+- **Context History Compaction** — new feature in Settings → 📁 Context to limit how much chat history is forwarded to the LLM without deleting messages locally: **Cut-off** mode silently drops the oldest pairs when the estimated token count exceeds a configurable threshold; **LLM summary** mode (Full autonomous only) auto-sends a summary request and saves the result as a collapsible 📦 compaction block — subsequent sends include only messages after that block
+- **Built-in commands** — new plugin-defined command category (not user-editable) shown with ⚡ prefix and blue-purple colour in a separate "── Built-in ──" section of the slash-command picker; displayed read-only in the Commands settings tab; built-in names are protected from user collision
+- **`/compact` built-in command** — manually triggers LLM summary compaction; visible in the dropdown only when all four conditions are met (Compaction enabled + LLM Summary strategy + Full autonomous mode + Project Context off); ignores the token threshold but re-validates all other guards; fires silently without adding a user message to the chat
+- **Context size estimate in params bar** — always-visible `~X.Xk / Yk (Z%)` button on the right side of the inference params bar; colour-coded: gray (normal), amber (near threshold), red (over limit); hover shows a dark floating popup with a progress bar and per-category token breakdown (history, system prompt, context files, compaction buffer, total, free space); refreshes on every send, LLM response, and chat switch
+- **Inspection fence output panel** — executing a `read:`/`ls:`/`grep:` fence with auto-send OFF now shows a scrollable output panel with **"📤 Send to LLM"** / **"✕ Dismiss"** buttons instead of silently discarding the result
+- **Confirm dialog for inspection fences** — proper icon, label, and detail block (file / directory / pattern + scope) for `read:`/`ls:`/`grep:` confirm dialogs; previously showed "? read" with an empty body
+- **Project root in system prompt** — the active Spyder project root is automatically injected into the system prompt so the LLM uses it as the base directory for all file operations even when Project Context is disabled
+- **Agentic output blue border** — the collapsed "⚙ Agentic output" frame now has a straight blue left border matching user message bubbles
+- **Attachment content tooltip** — hover any locked attachment badge in a sent message to preview the first 25 lines of its content
+- **Regenerate bug fix** — fixed two root causes of agentic action output being lost when regenerating after a service error: fence re-registration during history rebuild, and `read:`/`ls:`/`grep:` results using the wrong `source` type
+- **Context size estimate refresh on chat switch — bug fix** — the token counter now correctly recalculates after loading a saved chat; previously it always showed the empty-history value until the next LLM call
+- **Settings: ⎇ Git bar tab** — git status bar settings moved to a dedicated tab; Settings minimum height raised to 770 px
+- **Agentic warning colour** — the "Full autonomous mode" warning box in Settings → 🤖 Agentic now uses amber styling (matching the Project Context warning) instead of red
+- **Compaction table UX** — Provider column is now a dropdown of all known providers; Model column is an editable combo pre-populated with the live model list when provider matches the active one; "− Remove row" button width fixed
+- **`/clear` built-in command** — clears all messages while keeping every setting (model, system prompt, inference parameters, project context, collection); always saves to history before wiping regardless of the autosave setting; always visible in the slash-command picker; replaces the former toolbar 🗑 button
+- **Read fence batch grouping** — 2+ consecutive `read:`/`ls:`/`grep:` blocks from the same response are collapsed into one collapsible summary block (▶/▼ toggle, path list, ✓ Done badge in the header); applies to both live responses and history reloads
+- **Read fence auto-batching in off mode** — in Off autonomous mode all `read:`/`ls:`/`grep:` fences are now auto-batched into a single execution, matching Semi/Full mode behaviour
+- **Agentic output hover popup** — "⚙ Agentic output" label shows a custom dark-blue scrollable floating popup (max 420 px, 200 ms grace) instead of a plain system tooltip
+- **Context size refresh on delete** — the token counter updates immediately after deleting any exchange
+- **`/clear` history save fix** — clear always saves to history unconditionally; previously the save was gated on the `save_on_new` setting, which could leave a stale autosaved file reloadable from the history popup
+- **"Off" autonomous mode renamed to "Manual"** — now shows a batch confirmation dialog for ALL action types (reads and modifying alike), same as Semi; the key difference from Semi is that results are never auto-sent to the LLM; internal value `"off"` unchanged for backward compatibility
+- **Autonomous mode behaviour matrix popup** — ℹ button next to the "Autonomous Mode:" label opens a colour-coded table showing confirmation style and auto-send behaviour across all four mode variants
+- **Removed "Auto-send individual Execute results" checkbox** — redundant option removed (Manual + auto-send = Semi; no longer a meaningful distinction)
+- **Agentic mode and compaction enabled by default** — new installs start with agentic mode on and context history compaction on (Cut-off strategy)
+- **Stop-before-first-token Regenerate fix** — Regenerate now works correctly when a response was stopped before any tokens arrived
+- **Console output shown as Agentic output block** — auto-sent console execution results now render as the collapsed blue ⚙ Agentic output frame instead of a plain "You:" user bubble
+- **Batch confirm dialog patch preview fix** — fixed `TypeError: _diff_to_html() got an unexpected keyword argument 'context_lines'` when opening the batch dialog with a patch action
+- **Settings version label fix** — version string in the settings dialog bottom-left was clipped to "Ch"; now displays the full version correctly
+
+## What's new in 0.8.4
+
+- **Full autonomous mode** — new third execution mode (Off / Semi / Full) in *Settings → 🤖 Agentic*; in Full mode the LLM's requested actions execute immediately without any confirmation dialog; sub-option "Confirm only modifying actions" (default ON) still shows the batch dialog for file/patch/run/install/git while silently auto-executing read-only fences
+- **On-demand file inspection** — three new agentic fences: `read:path/to/file.py` (full or line-range), `ls:some/dir/`, `grep:pattern[:scope/]`; the LLM can explore the project without requiring full project context upload; results are auto-sent back in autonomous modes
+- **Inspection error forwarding** — `read:`/`ls:`/`grep:` errors are now sent to the LLM instead of being silently swallowed, preventing hallucination when a file is not found
+- **Git bar improvements** — untracked (new) files now counted in the diff stats; refresh interval configurable in Settings (default 10 s, range 5–300 s)
+- **Batch git output fix** — all git commands in a batch now reach the LLM; previously only the first command's output was forwarded due to an empty-target bug and duplicate-tag silencing
+- **Settings UI** — tab bar moved to left side with horizontal labels and compact height; Context tab split into two group boxes; version label in bottom-left corner
+
+## What's new in 0.8.3
+
+- **Batch confirmation dialog** — all action blocks from a single LLM response are grouped into one scrollable dialog; each row shows a friendly verb + target with an include/exclude checkbox; **Run selected** executes only the checked items in order; **Cancel** leaves all Execute buttons available as before
+- **Auto-show confirmation** (semi-autonomous mode) — when enabled the batch dialog appears automatically after each LLM response containing action blocks, without requiring the user to click individual Execute buttons; enable via *Settings → 🤖 Agentic → Semi-autonomous mode*
+- **Auto-send execution results** — after actions complete, results are injected as context tags and a follow-up is automatically sent to the LLM so it can confirm success or react to errors; always on when auto-show confirmation is on; also available independently for manual Execute clicks
+- **Collapsible agentic output messages** — user messages generated by the plugin (git bar prompts, auto-sent results) are shown as a collapsed **⚙ Agentic output** frame in the chat; click to expand; stored in JSON as `"agentic_response": true`
+- **Sequential git execution** — multiple `run:git` commands in a batch (e.g. `git add -A` then `git commit`) run in order, each waiting for the previous to finish
+- **Auto-dismiss git output panel** — when auto-send is enabled the inline output panel after a git command is suppressed and ✓ Done shown instead; the output travels to the LLM automatically; panel still appears in manual mode
+- **Settings enforcement** — enabling "Auto-show batch confirmation" forces "Auto-send execution results" on and grays it out; the two can be toggled freely only when auto-show confirmation is off
+- **No console popups on Windows** — git subprocess calls use `CREATE_NO_WINDOW` so no terminal window flickers during git operations
+
+## What's new in 0.8.2
+
+- **Git Status Bar** — compact bar below the context tag bar showing current branch (`⎇ branch`), diff stats (`+N −N in N files`), and three action buttons: **Commit** (suggests commit message + `run:git commit` fence), **PR desc** (generates PR description from current diff), **Changes** (summarises uncommitted changes); bar hides automatically when no git repo is active
+- **Auto-refresh on branch/index changes** — bar updates non-blocking via QThread when `.git/HEAD` or `.git/index` changes; branch switches trigger a context update so the LLM always knows the current branch
+- **Git info in project context** — when the git bar is enabled, `Branch:` and `Uncommitted:` are injected into the project context header; configurable via *"Show git status bar"* in Settings → 📁 Context
+
+## What's new in 0.8.1
+
+- **`run:git` agentic fence** — the LLM can run git commands via `` ```run:git `` fences; orange action block; non-blocking QThread execution with ⏳ spinner; inline output panel with **📎 Add to chat** / **✕ Dismiss**; git availability checked with a friendly error if git is not on PATH
+- **Diff syntax highlighting** — `patch:` blocks render with coloured unified-diff highlighting in the chat and confirm dialog; internal patch text is always preserved unchanged
+- **Robust patch application** — fuzzy line-search fallback when LLM omits `@@` line numbers, preventing silent no-op patches
+- **Agentic system prompt** — hash-based auto-upgrade removed; replaced with an amber upgrade notice in Settings; **Reset to default** button always visible above the collapsible prompt textarea; built-in prompt now enforces `patch:` for edits, `file:` only for new files
+- **Full absolute paths in file attachments** — manually attached files and project context blocks store and display full absolute paths so the LLM can use them directly in fences
+- **Wrapping context bar** — tag bar wraps to the next row instead of expanding the plugin window; project context toggle stays in a fixed right column
+- **New-chat project context** — starting a new chat always disables project context (configurable in Settings → 📁 Context); enabling project context clears any manually attached files
+- **Live project root for agentic actions** — base directory resolved lazily at click time using the live Spyder project root, even if project context is off; home directory is last-resort only
+- **`.git` metadata files in project context** — `HEAD`, `config`, `COMMIT_EDITMSG` etc. are now correctly collected when project context is active
+- **Version shown in Settings** — plugin version displayed in Settings → Connection tab
+
+## What's new in 0.8.0
+
+- **Named chat collections** — organise saved chats into user-defined collections (folders inside `~/.spyder_ai_chat/chats/`); fully backward-compatible with existing chat files in the Default collection
+- **Collection selector in history popup** — "Collection:" dropdown lets you browse one collection at a time or switch to **⊕ All Collections** to search across all collections simultaneously
+- **Collection Manager dialog** — ⚙ gear button opens a side-by-side manager: create, rename, delete collections; move chats between them individually or in bulk; delete dialog lets you choose to delete chats or move them to another collection first
+- **Right-click "Move to →"** — context menu on any chat row lets you move it to another collection; moving the currently open chat updates the panel's active reference live
+- **Collection badge in All-Collections view** — chat rows show a `[CollectionName]` badge so the source is always visible when browsing all collections
+- **Auto-complete settings fix** — "Context before cursor" field no longer resets to 100 when clicking OK (Qt intermediate-validation bug with minimum=100 was the root cause; lowered to 1)
+- **Button icon fixes** — gear icon in the toolbar now renders in monochrome on Windows instead of coloured emoji
+
+## What's new in 0.7.1
+
+- **Project Explorer context menu** — right-click file(s) in the Project Explorer to add them to the AI Chat context; multi-select supported; disabled automatically when project context is ON
+- **Editor context menu fix (Spyder 6.1.4)** — *AI Chat* submenu restored after Spyder 6.1.4 changed the editor menu API; backwards-compatible with Spyder ≤ 6.1.3
+- **Agentic fixes** — overwrite header updates live after file creation; patch reloads the open editor buffer; startup chat action blocks (run/overwrite detection) work correctly on first click without requiring a chat switch
+- **Agentic: Apply patch colour** — changed from purple to lime green for better contrast
+- **Settings: Agentic tab** — compact 2-column layout; prompt template collapsible to save vertical space
+
+## What's new in 0.7.0
+
+- **Agentic mode** — enable in Settings → 🤖 Agentic; the LLM can take direct actions via special code fences, each confirmed with a single click:
+  - `` ```file:path `` — create or overwrite a file; new files open automatically in the Spyder editor
+  - `` ```run:python `` — send Python code to the active IPython console
+  - `` ```install:pip `` — install packages via the console
+  - `` ```patch:path `` — apply a unified diff patch to an existing file
+- **Agentic settings tab**: master switch, per-action allow flags, default base path, customisable prompt template with Reset button
+- **Overwrite detection** — action button shows blue "✓ Create file" or amber "⚠ Overwrite file" depending on whether the target exists
+- **Done badge** — executed actions show **✓ Done**; hover reveals **↺ Re-run**; execution state persisted across chat reloads
+- **Regenerate fix** — 🔄 Regenerate now correctly injects the agentic system prompt
+- **Streaming flash fix** — eliminated the brief floating widget appearing during action block rendering
+
+## What's new in 0.6.0
+
+- **Project-wide context** — enable the **📁 Proj. Context** toggle in the chat bar to attach your entire Spyder project to the conversation:
+  - Folder-selection dialog with live token estimate lets you choose which top-level folders to include
+  - First message sends all selected files in full; subsequent messages send only changed files as a delta (token-efficient)
+  - Open files with unsaved edits use the live editor buffer — the LLM always sees what you are currently working on
+  - New unsaved files (not yet on disk) are auto-included from the editor buffer
+  - File watcher monitors the project directory; the badge shows a changed-file count before each send
+  - Re-opening a saved chat restores project context; files are silently re-expanded if hashes match, otherwise a stale badge is shown
+  - Whole-file attachments are blocked while project context is ON (editor selections and console attachments remain available)
+  - New **📁 Context** tab in Settings: max file size, max file count, extra exclusion glob patterns (on top of built-in exclusions and `.gitignore`)
+
+## What's new in 0.5.1
+
+- **Chat history search** — live search field in the history popup filters by title preview and full message content simultaneously as you type
+- **Table `<br>` tag fix** — line breaks inside table cells are now rendered correctly instead of appearing as literal `<br>` text
+- **Table scroll fix** — mouse wheel over a table now scrolls the chat window instead of scrolling the table widget independently
+
+## What's new in 0.5.0
+
+- **IPython console context menu** — right-click anywhere in the IPython console to access the **AI Chat** submenu: *Add console content to context* attaches the full console output (ANSI codes stripped); *Add selection to context* attaches the highlighted text
+- **Console attachment colour distinction** — console context tags use a teal-green badge colour to distinguish them from the blue editor/file tags at a glance
+- **Think block show/hide scroll fix** — toggling the thinking block no longer causes the chat pane to jump to the bottom; scroll position is preserved
+- **Live code block rendering** — the code block widget appears at the first ` ``` ` line and grows in real time; finalised when the closing fence arrives
+- **Code block height fixes** — accurate height from `fontMetrics().lineSpacing()`; horizontal scrollbar space reserved; single-line blocks no longer clipped
+
+## What's new in 0.4.1
+
+- **Default system prompt for new chat** — pick a saved prompt as the default in Settings → System Prompts; it is applied automatically every time a new chat is started
+- **Think block streaming fix** — `<think>` blocks render as the collapsible Thinking widget immediately after `</think>` arrives, not only at stream end
+- **Nested list streaming fix** — nested list items now have correct line breaks during progressive rendering
+- **Code-only message fix** — a response that is a single code block no longer produces an empty code widget; it renders correctly when the closing fence arrives
+- **`build_code_block` crash fix** — `UnboundLocalError` when loading saved chats with code blocks is resolved
+
+## What's new in 0.4.0
+
+- **Processing spinner** — braille spinner shown while waiting for the first LLM token; disappears the moment streaming starts
+- **Incremental markdown rendering** — response formatted in real time as it streams; completed blocks become rendered widgets instantly; only the trailing incomplete block is shown as plain text
+- **HTTP error display** — API errors shown in a dark-red styled box with an "⚠ Response error" header; no empty assistant block created on error
+- **Delete on error blocks** — delete button on error response blocks now works correctly
+- **Regenerate on error** — Regenerate button now appears on error response blocks for an immediate retry
+
+## What's new in 0.3.2
+
+- **Plugin entry-point renamed** to `ai_chat_plugin` (`spyder.plugins`) and `ai_fim_provider` (`spyder.completions`) for clarity
+- **`NAME` / `CONF_SECTION`** in `AIChatPlugin` updated to `"ai_chat_plugin"`; `COMPLETION_PROVIDER_NAME` / `CONF_SECTION` in `AiFimProvider` updated to `"ai_fim_provider"` / `"ai_chat_plugin"`
+
+## What's new in 0.3.1
+
+- **Settings → ⚡ Auto-complete tab** redesigned as a step-by-step wizard: enable → set provider/URL → **Load Models** → pick model + backend; backend probe validates response body to avoid false-positive matches
+- **Model list and backend list persist** after save and reopen — no need to re-run Load Models every time
+- **Test Connection button** in the Connection tab — probes `GET /models` with an OpenAI-SDK-style `User-Agent` (fixes Cloudflare 403 / error 1010 on Groq and similar providers)
+- **System Prompts tab**: Edit button removed; selecting a prompt immediately opens it for editing; Save activates only when content changes
+- **Commands tab**: Edit button removed; selecting a command immediately opens it for editing; Save activates only when content changes
+- **Settings window** wider (+10%); tabs stretch edge-to-edge; "🖊 Editor" tab renamed to "🖊 Dialogs"
+- **FIM cursor-offset bug fixed**: completions are now correct for files with `\r\n` line endings
+
+## What's new in 0.3.0
+
+- **AI auto-complete (FIM)** — fill-in-middle ghost-text completions in the code editor
+- **Tab** to accept, **Escape** to dismiss, **Alt+\\** for manual trigger
+- Supports Ollama, LM Studio, vLLM, DeepSeek, Codestral/Mistral, OpenRouter, custom endpoints
+- Trigger modes: auto (debounce), after new line, manual
+
+---
+
+## Features
+
+| | Feature | Details |
+|---|---|---|
+| 🗨️ | Chat panel | Scrollable conversation with colour-coded user / assistant messages |
+| ⚡ | Streaming | Token-by-token streaming with live incremental markdown rendering — blocks are formatted as they arrive |
+| 🔁 | Model selector | Dropdown populated live from the API — switch models instantly |
+| 🔧 | 12 providers | OpenAI, Groq, Mistral, DeepSeek, Together, Fireworks, OpenRouter, Azure, Ollama, LM Studio, vLLM, Custom |
+| ⚙ | Inference params | Per-chat hyperparameters popup — provider-aware, resets on New Chat |
+| 🔑 | Optional API key | Leave blank for local models that need no authentication |
+| 🧠 | System prompt | Custom prompt field, or select from a saved prompts library |
+| 💬 | Saved system prompts | Define reusable prompts; manage via Settings → System Prompts tab |
+| ⏹ | Stop | Cancel a streaming reply at any time |
+| 🗑 | New Chat | Start a fresh conversation; current one saved automatically |
+| 📋 | Chat history | Browse, load, and delete saved chats; live search by title or content; active chat highlighted in green |
+| 📄 | Chat history paging | Chats longer than 120 messages split into pages; centered `<<` / `<` / numbered / `>` / `>>` bar below the chat area; current page highlighted; hidden for shorter chats |
+| 🗂 | Chat collections | Organise chats into named collections; ⚙ manager to create / rename / delete; right-click to move chats; search within one or across all |
+| 📎 | File context | Attach whole files or selected text from the editor, or IPython console output — colour-coded tags (blue = editor, teal = console) |
+| 🖊️ | Markdown rendering | Headings, bold, italic, tables, code blocks, blockquotes, links, strikethrough |
+| 🗂 | Nested lists | Arbitrarily deep bullet & numbered lists, mixed types at any level |
+| 🧠 | Thinking blocks | `<think>` tags rendered as a collapsible scrollable box (DeepSeek-R1, QwQ, …) |
+| 📋 | Copy to editor | Insert any code block or full response at the cursor in the active file |
+| 🗑 | Delete exchange | Remove any exchange with a 3-second undo window |
+| 🔄 | Regenerate | Re-run the last assistant response with one click |
+| ↔ | Horizontal scroll | Wide code blocks scroll horizontally instead of clipping |
+| ⚙ | Settings | Tabbed dialog: provider + Test Connection, dialog font sizes, history, system prompts, commands, auto-complete |
+| / | Commands | Slash-command aliases with picker dropdown; expand to full prompts before sending |
+| ⚡ | Built-in commands | Plugin-defined commands (⚡ prefix, blue-purple) in a separate dropdown section — not user-editable; `/compact` (manual LLM summary compaction) and `/clear` (wipe conversation, keep all settings) |
+| 📊 | Context size estimate | Always-visible `~X.Xk / Yk (Z%)` token counter in the params bar — colour-coded; hover for per-category breakdown popup |
+| ✍️ | AI auto-complete | FIM ghost-text completions in the editor — Tab to accept, Escape to dismiss |
+| 🤖 | Agentic mode | LLM creates files, runs console code, installs packages, applies patches, runs git commands — one-click confirmation per action or batch dialog for multiple actions |
+| 🤖 | Autonomous modes | **Manual** — batch dialog for all actions; read/ls/grep + git results shown in a per-block panel (you decide); other modifying results auto-sent · **Semi** — batch dialog + all results auto-sent · **Full** — silent or confirm-modifying execution, results always auto-sent; ℹ behaviour-matrix popup in settings |
+
+---
+
+## Requirements
+
+- Python ≥ 3.9
+- Spyder ≥ 6.0
+- No additional Python packages — HTTP via `urllib` (stdlib), UI via Qt (bundled with Spyder)
+
+---
+
+## Installation
+
+### From PyPI
+
+```bash
+pip install spyder-ai-chat
+```
+
+### From source / development build
+
+Clone the source code from the repository:
+
+```
+https://sourceforge.net/p/spyder-ai-chat-plugin/code/ci/master/tree/
+```
+
+Then install in editable mode:
+
+```bash
+cd spyder_ai_chat
+pip install -e .
+```
+
+> **Important:** install into the **same Python environment that Spyder uses**.
+
+After installation, **restart Spyder**. The panel appears automatically.
+If not visible: **Window → Panes → AI Chat**.
+
+---
+
+## Quick start
+
+1. Open **Settings** (⚙ button in the panel toolbar).
+2. On the **Connection** tab, select your **Provider** from the dropdown.
+3. Fill in the API URL and key as needed (pre-filled for known providers).
+4. Click **Test Connection** to verify credentials, then click **OK**.
+5. Click **⟳** to load the model list and pick a model.
+6. Type a message and press **Ctrl+Enter** or click **Send**.
+
+**To enable AI auto-complete in the editor:**
+
+1. Open **Settings → ⚡ Auto-complete**.
+2. Check **Enable AI auto-completion in the editor**.
+3. Select a provider and API URL, then click **Load Models**.
+4. Choose a model and backend type, adjust parameters if needed, and click **OK**.
+
+---
+
+## License
+
+MIT — see the `LICENSE` file included in the package.

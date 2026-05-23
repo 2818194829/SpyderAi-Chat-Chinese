@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SpyderAi-Chat-Chinese"
+version = "0.8.8"
+description = "OpenAI-compatible AI chat pane + FIM completion for Spyder 6 — 中文汉化版"
+requires-python = ">=3.9"
+dependencies = ["spyder>=6.0"]
+authors = [
+  {name = "Maciej Piecko"}
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+readme = {file = "README_PYPI.md", content-type = "text/markdown"}
+
+[project.urls]
+Homepage = "https://sourceforge.net/projects/spyder-ai-chat-plugin/"
+
+[project.entry-points."spyder.plugins"]
+ai_chat_plugin = "spyder_ai_chat.plugin:AIChatPlugin"
+
+[project.entry-points."spyder.completions"]
+ai_fim_provider = "spyder_ai_chat.fim.provider:AiFimProvider"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["spyder_ai_chat*"]
+
+[tool.setuptools.package-data]
+"spyder_ai_chat.resources" = ["*.png", "*.svg", "*.ico"]

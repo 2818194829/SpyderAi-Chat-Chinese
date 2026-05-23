@@ -1,0 +1,5 @@
+[spyder.completions]
+ai_fim_provider = spyder_ai_chat.fim.provider:AiFimProvider
+
+[spyder.plugins]
+ai_chat_plugin = spyder_ai_chat.plugin:AIChatPlugin

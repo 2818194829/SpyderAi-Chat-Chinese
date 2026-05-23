@@ -1,0 +1,5 @@
+memory/
+spyder_ai_chat.egg-info/
+spyder_ai_chat/__pycache__/
+spyder_ai_chat/fim/__pycache__/
+spyder_ai_chat/widgets/__pycache__/
