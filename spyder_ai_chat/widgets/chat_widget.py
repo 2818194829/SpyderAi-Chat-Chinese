@@ -3677,7 +3677,7 @@ class AIChatPanel(QWidget):
         self._params_bar_lbl = QPushButton("点击设置推理参数")
         self._params_bar_lbl.setFlat(True)
         self._params_bar_lbl.setStyleSheet(_params_bar_idle_style())
-        _install_themed_tip(self._params_bar_lbl, "Click to configure inference parameters (temperature, max tokens…)")
+        _install_themed_tip(self._params_bar_lbl, "点击配置推理参数（温度、最大 Token 数…）")
         self._params_bar_lbl.clicked.connect(self._toggle_params_popup)
         self._params_bar_lbl.setFixedHeight(24)
         params_row.addWidget(self._params_bar_lbl, 1)
@@ -3791,10 +3791,10 @@ class AIChatPanel(QWidget):
 
         # ── status ────────────────────────────────────────────────────
         n = len(self._model_list)
-        src = "saved" if self._state.get("model_list") else "defaults"
-        self._status = QLabel(f"Ready. {n} model(s) from {src}. Click ⟳ to refresh.")
+        src = "配置" if self._state.get("model_list") else "默认"
+        self._status = QLabel(f"就绪。{n} 个模型（{src}）。点击 ⟳ 刷新。")
         self._status.setWordWrap(True)
-        self._status.setStyleSheet("font-size:10px; padding:2px 4px;")
+        self._status.setStyleSheet("font-size:15px; padding:2px 4px;")
 
         # ── assemble ──────────────────────────────────────────────────
         # Upper panel: chat history + all info bars
