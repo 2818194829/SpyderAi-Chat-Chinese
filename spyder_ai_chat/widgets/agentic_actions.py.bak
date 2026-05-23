@@ -18,7 +18,7 @@ _SUBPROCESS_FLAGS = (
 )
 
 # ---------------------------------------------------------------------------
-# Action type constants — single source of truth for fence action names.
+# Action type constants �?single source of truth for fence action names.
 # Avoids scattered raw string literals like "file", "run", "patch" etc.
 # ---------------------------------------------------------------------------
 _AT = SimpleNamespace(
@@ -76,7 +76,7 @@ def run_git_command(args, cwd=None):
 
 
 # ---------------------------------------------------------------------------
-# File inspection helpers (read, ls, grep) — pure Python, cross-platform
+# File inspection helpers (read, ls, grep) �?pure Python, cross-platform
 # ---------------------------------------------------------------------------
 
 def _count_lines(path):
@@ -96,7 +96,7 @@ def read_file(path, base_dir=None, line_from=None, line_to=None):
     Read a file, optionally restricted to lines line_from..line_to (1-based, inclusive).
     Returns (content: str, error: str, rc: int).
     content always starts with a header:
-      "[filename — N lines]"  or  "[filename — lines A-B of N total]"
+      "[filename �?N lines]"  or  "[filename �?lines A-B of N total]"
     """
     if base_dir and not os.path.isabs(path):
         full = os.path.join(base_dir, path)
@@ -123,10 +123,10 @@ def read_file(path, base_dir=None, line_from=None, line_to=None):
         a = max(1, line_from)
         b = min(total, line_to)
         body   = "".join(all_lines[a - 1:b])
-        header = f"[{fname} — lines {a}-{b} of {total} total]"
+        header = f"[{fname} �?lines {a}-{b} of {total} total]"
     else:
         body   = "".join(all_lines)
-        header = f"[{fname} — {total} lines]"
+        header = f"[{fname} �?{total} lines]"
 
     return f"{header}\n{body}", "", 0
 
@@ -137,7 +137,7 @@ _LS_LINE_COUNT_THRESHOLD = 50
 def ls_dir(path, base_dir=None):
     """
     List a directory. Returns (listing: str, error: str, rc: int).
-    Directories get a trailing '/'. For directories with ≤ 50 entries,
+    Directories get a trailing '/'. For directories with �?50 entries,
     text file line counts are shown as '  (N lines)'.
     """
     if base_dir and not os.path.isabs(path):
@@ -231,7 +231,7 @@ def grep_files(pattern, base_dir, scope=""):
                             lines_out.append(f"{rel}:{lineno}: {line.rstrip()}")
                             if len(lines_out) >= _GREP_MAX_RESULTS:
                                 lines_out.append(
-                                    f"… (results capped at {_GREP_MAX_RESULTS} lines)")
+                                    f"�?(results capped at {_GREP_MAX_RESULTS} lines)")
                                 return "\n".join(lines_out), "", 0
             except OSError:
                 continue
@@ -245,57 +245,49 @@ def grep_files(pattern, base_dir, scope=""):
 
 
 # ---------------------------------------------------------------------------
-# Agentic system prompt — section constants (one per fence type / shared rule)
+# Agentic system prompt �?section constants (one per fence type / shared rule)
 # ---------------------------------------------------------------------------
 
-# Preamble — four variants, one per autonomous mode
+# Preamble �?four variants, one per autonomous mode
 _PROMPT_PREAMBLE_MANUAL = """\
 你可以通过使用特殊的代码围栏来执行直接操作。每个操作会在执行前通过批量对话框呈现给用户以获取明确确认。\
-结果不会自动转发——由用户决定将哪些内容发送回给你。"""
+结果不会自动转发——由用户决定将哪些内容发送回给你�?""
 
 _PROMPT_PREAMBLE_SEMI = """\
 你可以通过使用特殊的代码围栏来执行直接操作。每个操作会在执行前通过批量对话框呈现给用户以获取明确确认。\
-执行后，结果会自动转发给你。"""
+执行后，结果会自动转发给你�?""
 
 _PROMPT_PREAMBLE_FULL_CONFIRM = """\
 你可以通过使用特殊的代码围栏来执行直接操作。只读检查围栏（read:、ls:、grep:）\
 静默执行，其结果会自动转发给你。文件修改操作（file:、patch:、run:python、\
-install:、run:git、delete:、rename:）在执行前仍需要用户确认，之后结果会自动转发给你。"""
+install:、run:git、delete:、rename:）在执行前仍需要用户确认，之后结果会自动转发给你�?""
 
 _PROMPT_PREAMBLE_FULL_SILENT = """\
 你可以通过使用特殊的代码围栏来执行直接操作。所有操作立即执行，无需任何用户确认，\
-结果会自动转发给你。"""
+结果会自动转发给你�?""
 
 _PROMPT_CLOSING = """\
 仅当用户明确要求你创建或修改文件、运行代码、安装包或与 git 交互时，才使用这些操作围栏。\
-始终在操作围栏之前解释你正在做什么。"""
+始终在操作围栏之前解释你正在做什么�?""
 
-# file: vs patch: rule — three variants depending on which fences are enabled
+# file: vs patch: rule �?three variants depending on which fences are enabled
 _PROMPT_FILE_VS_PATCH_BOTH = """\
-重要规则——file vs patch：
-- 使用 `patch:` 围栏来编辑或修改已存在的文件。永远不要使用 `file:` 围栏完整重写已有文件。
-- 仅在创建尚不存在的新文件时使用 `file:` 围栏。
-- 当用户说"编辑"、"更改"、"更新"、"修复"、"重构"或"修改"文件时——始终生成 `patch:` 围栏，而不是 `file:` 围栏。"""
+重要规则 �?file vs patch�?- 使用 `patch:` 围栏来编辑或修改已存在的文件。永远不要使�?`file:` 围栏完整重写已有文件�?- 仅在创建尚不存在的新文件时使�?`file:` 围栏�?- 当用户说"编辑"�?更改"�?更新"�?修复"�?重构"�?修改"文件时——始终生�?`patch:` 围栏，而不�?`file:` 围栏�?""
 
 _PROMPT_FILE_ONLY_RULE = """\
-重要规则——file 围栏：
-- 仅使用 `file:` 围栏来创建尚不存在的新文件。永远不要用它来重写已有文件。"""
+重要规则 �?file 围栏�?- 仅使�?`file:` 围栏来创建尚不存在的新文件。永远不要用它来重写已有文件�?""
 
 _PROMPT_PATCH_ONLY_RULE = """\
-重要规则——patch 围栏：
-- 使用 `patch:` 围栏来编辑或修改已存在的文件。当用户说"编辑"、"更改"、"更新"、"修复"、\
-"重构"或"修改"文件时，始终生成 `patch:` 围栏。"""
+重要规则 �?patch 围栏�?- 使用 `patch:` 围栏来编辑或修改已存在的文件。当用户�?编辑"�?更改"�?更新"�?修复"、\
+"重构"�?修改"文件时，始终生成 `patch:` 围栏�?""
 
 # Per-fence sections
 _PROMPT_FILE = """\
-创建一个全新的文件（路径相对于项目根目录，或使用绝对路径）：
-```file:path/to/new_file.py
-# 完整的文件内容在此
-```"""
+创建一个全新的文件（路径相对于项目根目录，或使用绝对路径）�?```file:path/to/new_file.py
+# 完整的文件内容在�?```"""
 
 _PROMPT_RUN_PYTHON = """\
-在 IPython 控制台中运行 Python 代码：
-```run:python
+�?IPython 控制台中运行 Python 代码�?```run:python
 print("hello world")
 ```"""
 
@@ -316,39 +308,35 @@ _PROMPT_PATCH = """\
 +新行
 ```"""
 
-# Git — two variants: manual (user attaches output) vs auto-send
+# Git �?two variants: manual (user attaches output) vs auto-send
 _PROMPT_GIT_MANUAL = """\
-在项目目录中运行 git 命令：
-```run:git
+在项目目录中运行 git 命令�?```run:git
 log --oneline -10
 ```
 命令输出将内联显示。用户可以将它附加到聊天中供你读取和分析，或忽略它。\
 使用只读命令（log、diff、status、show、blame）检查仓库。\
-使用写入命令（commit、branch、checkout）执行操作。始终向用户展示你正在运行的命令及其原因。"""
+使用写入命令（commit、branch、checkout）执行操作。始终向用户展示你正在运行的命令及其原因�?""
 
 _PROMPT_GIT_AUTO = """\
-在项目目录中运行 git 命令：
-```run:git
+在项目目录中运行 git 命令�?```run:git
 log --oneline -10
 ```
 命令输出会自动转发给你。使用只读命令（log、diff、status、show、blame）检查仓库。\
-使用写入命令（commit、branch、checkout）执行操作。始终向用户展示你正在运行的命令及其原因。"""
+使用写入命令（commit、branch、checkout）执行操作。始终向用户展示你正在运行的命令及其原因�?""
 
 _PROMPT_READ = """\
-读取文件（完整内容）：
-```read:path/to/file.py
+读取文件（完整内容）�?```read:path/to/file.py
 ```
-读取特定行范围（从 1 开始，包含两端）：
+读取特定行范围（�?1 开始，包含两端）：
 ```read:path/to/file.py:100-150
 ```
-结果始终以显示文件名和总行数的头部开始，例如"[file.py — 250 lines]"。\
-在读取大文件前使用小范围如":1-1"来了解总大小。"""
+结果始终以显示文件名和总行数的头部开始，例如"[file.py �?250 lines]"。\
+在读取大文件前使用小范围�?:1-1"来了解总大小�?""
 
 _PROMPT_LS = """\
-列出目录：
-```ls:some/directory/
+列出目录�?```ls:some/directory/
 ```
-对于条目数 ≤ 50 的目录，会显示每个文本文件的行数。"""
+对于条目�?�?50 的目录，会显示每个文本文件的行数�?""
 
 _PROMPT_GREP = """\
 在所有项目文件中搜索正则表达式模式：
@@ -357,57 +345,55 @@ _PROMPT_GREP = """\
 在特定子目录中搜索：
 ```grep:pattern:src/
 ```
-结果以"文件:行号: 匹配文本"的格式返回。结果上限为 200 行。\
-在进行更改前使用 read:/ls:/grep: 探索项目——只请求你实际需要的文件，而不是请求完整的项目上下文。"""
+结果�?文件:行号: 匹配文本"的格式返回。结果上限为 200 行。\
+在进行更改前使用 read:/ls:/grep: 探索项目——只请求你实际需要的文件，而不是请求完整的项目上下文�?""
 
-# Delete — two variants: confirmation required vs silent (full-silent mode)
+# Delete �?two variants: confirmation required vs silent (full-silent mode)
 _PROMPT_DELETE_CONFIRM = """\
-删除单个文件（不可逆——用户将看到确认对话框）：
+删除单个文件（不可�?�?用户将看到确认对话框）：
 ```delete:path/to/file.py
 ```"""
 
 _PROMPT_DELETE_SILENT = """\
-删除单个文件（不可逆——立即执行无需确认）：
+删除单个文件（不可�?�?立即执行无需确认）：
 ```delete:path/to/file.py
 ```"""
 
 _PROMPT_DELETE_DIR_CONFIRM = """\
-递归删除整个目录树（不可逆——用户将看到确认对话框）：
+递归删除整个目录树（不可�?�?用户将看到确认对话框）：
 ```delete_dir:path/to/directory/
 ```"""
 
 _PROMPT_DELETE_DIR_SILENT = """\
-递归删除整个目录树（不可逆——立即执行无需确认）：
+递归删除整个目录树（不可�?�?立即执行无需确认）：
 ```delete_dir:path/to/directory/
 ```"""
 
 _PROMPT_RENAME = """\
-重命名或移动文件——将新路径放在围栏体中：
-```rename:path/to/old_file.py
+重命名或移动文件 �?将新路径放在围栏体中�?```rename:path/to/old_file.py
 path/to/new_file.py
 ```"""
 
 _PROMPT_RENAME_DIR = """\
-重命名或移动目录——将新路径放在围栏体中：
-```rename_dir:path/to/old_dir/
+重命名或移动目录 �?将新路径放在围栏体中�?```rename_dir:path/to/old_dir/
 path/to/new_dir/
 ```"""
 
 _PROMPT_RENAME_NOTE = """\
-路径相对于项目根目录，或使用绝对路径。rename:/rename_dir: 也可以将文件或目录移动到不同位置（相当于 mv）。"""
+路径相对于项目根目录，或使用绝对路径。rename:/rename_dir: 也可以将文件或目录移动到不同位置（相当于 mv）�?""
 
-# Inspection discipline — two variants: manual (user clicks "Send to LLM") vs auto-send
+# Inspection discipline �?two variants: manual (user clicks "Send to LLM") vs auto-send
 _PROMPT_INSPECTION_DISCIPLINE_MANUAL = """\
-重要——检查围栏纪律：当你输出 read:、ls: 或 grep: 围栏时，请在围栏后立即结束你的回复。\
-在真正看到内容之前，不要推测或描述内容。用户必须点击"发送给 LLM"来将结果转发给你；\
+重要 �?检查围栏纪律：当你输出 read:、ls: �?grep: 围栏时，请在围栏后立即结束你的回复。\
+在真正看到内容之前，不要推测或描述内容。用户必须点�?发送给 LLM"来将结果转发给你；\
 他们也可以忽略，在这种情况下你将不会收到输出。你可以在一次回复中输出多个检查围栏\
-（它们将一起执行），但不要有其他内容——没有评论、没有假设、没有部分答案。等待结果。"""
+（它们将一起执行），但不要有其他内容——没有评论、没有假设、没有部分答案。等待结果�?""
 
 _PROMPT_INSPECTION_DISCIPLINE_AUTO = """\
-重要——检查围栏纪律：当你输出 read:、ls: 或 grep: 围栏时，请在围栏后立即结束你的回复。\
+重要 �?检查围栏纪律：当你输出 read:、ls: �?grep: 围栏时，请在围栏后立即结束你的回复。\
 在真正看到内容之前，不要推测或描述内容。结果会自动转发给你，然后你可以分析它们。\
 你可以在一次回复中输出多个检查围栏（它们将一起执行），但不要有其他内容——\
-没有评论、没有假设、没有部分答案。等待结果。"""
+没有评论、没有假设、没有部分答案。等待结果�?""
 
 
 def build_agentic_system_prompt(agentic_cfg: dict) -> str:
@@ -474,7 +460,7 @@ def build_agentic_system_prompt(agentic_cfg: dict) -> str:
     return "\n\n".join(sections)
 
 
-# Backward-compat shim — all fences enabled, semi mode (closest to old default).
+# Backward-compat shim �?all fences enabled, semi mode (closest to old default).
 # Any remaining import of AGENTIC_SYSTEM_PROMPT keeps working without crashing.
 AGENTIC_SYSTEM_PROMPT = build_agentic_system_prompt({
     "allow_create_file": True, "allow_run_console": True, "allow_install": True,
@@ -558,8 +544,8 @@ def _find_hunk_position(lines, hunk_old):
     (None, False) when not found.
 
     Two passes:
-    1. Exact match — content must be identical.
-    2. Stripped match — leading/trailing whitespace on every line is ignored.
+    1. Exact match �?content must be identical.
+    2. Stripped match �?leading/trailing whitespace on every line is ignored.
        Used as a fallback when the LLM's diff has slightly wrong indentation.
        The caller must use the file's original lines for context entries
        (see _build_hunk_chunk) to avoid propagating the LLM's whitespace errors.
@@ -585,9 +571,9 @@ def _build_hunk_chunk(result_lines, pos, hunk_actions, preserve_context):
 
     hunk_actions  list of (kind, content) where kind is 'context'|'add'|'remove'.
     preserve_context
-        True  → use the FILE's version for context lines (indentation preserved).
+        True  �?use the FILE's version for context lines (indentation preserved).
                  Used when the match was fuzzy (stripped whitespace).
-        False → use the diff's version for all lines (used for exact matches).
+        False �?use the diff's version for all lines (used for exact matches).
 
     Returns the list of lines that should replace result_lines[pos:pos+n_old].
     """
@@ -596,7 +582,7 @@ def _build_hunk_chunk(result_lines, pos, hunk_actions, preserve_context):
     for kind, content in hunk_actions:
         if kind == "context":
             if preserve_context and fi < len(result_lines):
-                # Keep the FILE's exact line — preserves indentation /
+                # Keep the FILE's exact line �?preserves indentation /
                 # trailing whitespace that the LLM may have got slightly wrong.
                 chunk.append(result_lines[fi])
             else:
@@ -619,7 +605,7 @@ def _check_patch_line_numbers(diff_text, file_path):
     Returns an empty list when the file doesn't exist, can't be read, or
     all hunk positions are already correct.
 
-    Used only for *display* purposes — the actual patch application via
+    Used only for *display* purposes �?the actual patch application via
     ``_apply_unified_diff`` uses its own fuzzy search independently.
     """
     if not file_path or not os.path.isfile(file_path):
@@ -669,11 +655,11 @@ def _check_patch_line_numbers(diff_text, file_path):
         exp = old_start - 1
         if (0 <= exp and exp + len(hunk_old) <= len(orig_lines)
                 and orig_lines[exp:exp + len(hunk_old)] == hunk_old):
-            continue  # numbers are accurate — not stale
+            continue  # numbers are accurate �?not stale
         # Try to find the actual position via the same fuzzy search
         pos, _ = _find_hunk_position(orig_lines, hunk_old)
         if pos is None:
-            continue  # can't locate (new file or too different) — skip
+            continue  # can't locate (new file or too different) �?skip
         actual_line = pos + 1
         if actual_line != old_start:
             stale.append((hunk_header, old_start, actual_line))
@@ -695,22 +681,22 @@ def _apply_unified_diff(original_text, diff_text):
         fall back to ``_find_hunk_position`` (fuzzy / stripped-whitespace
         search).  When a fuzzy match is found, ``offset`` is recalibrated so
         subsequent line-number hunks also land at the right place.
-    4.  If neither strategy locates the hunk, skip it — better to miss a
+    4.  If neither strategy locates the hunk, skip it �?better to miss a
         change than to corrupt the file with a misplaced write.
 
     Whitespace / indentation safety
     ────────────────────────────────
     Whenever the match was fuzzy (stripped whitespace), we rebuild the output
     chunk via ``_build_hunk_chunk(preserve_context=True)``:
-    •  *Context* lines keep the FILE's original content verbatim — indentation
+    �? *Context* lines keep the FILE's original content verbatim �?indentation
        and trailing whitespace are never changed for lines the diff didn't
        intend to modify.  This prevents the common failure where the LLM's
        context lines have slightly wrong indentation (e.g. 3 spaces instead of
        4) and the wholesale hunk_new replacement silently mis-indents the last
        line of the changed section.
-    •  *Added* lines use the diff content as-is; the LLM chose their
+    �? *Added* lines use the diff content as-is; the LLM chose their
        indentation intentionally.
-    •  *Removed* lines are consumed (skipped) from the file.
+    �? *Removed* lines are consumed (skipped) from the file.
 
     For exact matches the replacement is wholesale (hunk_new verbatim) since
     the context lines were verified to be identical to the file anyway.
@@ -752,7 +738,7 @@ def _apply_unified_diff(original_text, diff_text):
             elif hl.startswith(" "):
                 hunk_actions.append(("context", hl[1:]))
             elif hl == "":
-                # Bare blank line in hunk body — treat as context
+                # Bare blank line in hunk body �?treat as context
                 hunk_actions.append(("context", ""))
             i += 1
 
@@ -761,26 +747,26 @@ def _apply_unified_diff(original_text, diff_text):
         hunk_new = [c for k, c in hunk_actions if k in ("context", "add")]
 
         # ── Locate hunk in current result ────────────────────────────────
-        preserve_context = False   # True → use file content for context lines
+        preserve_context = False   # True �?use file content for context lines
 
         if old_start is None:
-            # No line numbers from the LLM — pure fuzzy search
+            # No line numbers from the LLM �?pure fuzzy search
             pos, exact = _find_hunk_position(result, hunk_old)
             if pos is None:
-                continue           # can't locate hunk — skip rather than corrupt
+                continue           # can't locate hunk �?skip rather than corrupt
             preserve_context = not exact
         else:
             pos = max(0, min(old_start + offset, len(result)))
             end = min(pos + len(hunk_old), len(result))
 
             if hunk_old and result[pos:end] == hunk_old:
-                # Exact match at the expected position — fast path
+                # Exact match at the expected position �?fast path
                 exact = True
             else:
-                # Line numbers stale/wrong — try fuzzy fallback
+                # Line numbers stale/wrong �?try fuzzy fallback
                 pos, exact = _find_hunk_position(result, hunk_old)
                 if pos is None:
-                    continue       # cannot locate hunk — skip rather than corrupt
+                    continue       # cannot locate hunk �?skip rather than corrupt
                 # Recalibrate offset so subsequent hunks land correctly too
                 offset = pos - old_start
             preserve_context = not exact
@@ -817,7 +803,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
     Show a modal confirmation dialog for one agentic action.
 
     Returns:
-        (confirmed: bool, final_path: str)  — final_path may differ from
+        (confirmed: bool, final_path: str)  �?final_path may differ from
         target if the user edited it in the dialog (file/patch actions).
     """
     from qtpy.QtWidgets import (
@@ -829,7 +815,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
     from qtpy.QtGui import QFont as _QFont
 
     _dark = _is_dialog_dark()
-    # Colour palette — dark vs light theme
+    # Colour palette �?dark vs light theme
     _fg_dim    = "#c8c8c8" if _dark else "#444444"
     _border    = "#444444" if _dark else "#cccccc"
     _info_bg   = "#2a2a2a" if _dark else "#f5f5f5"
@@ -869,16 +855,16 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
     _ICONS = {
         "file":       "📄",
         "patch":      "🩹",
-        "run":        "▶",
+        "run":        "�?,
         "install":    "📦",
-        "git":        "⎇",
+        "git":        "�?,
         "read":       "📄",
         "ls":         "📁",
         "grep":       "🔍",
         "delete":     "🗑",
         "delete_dir": "🗑",
-        "rename":     "↪",
-        "rename_dir": "↪",
+        "rename":     "�?,
+        "rename_dir": "�?,
     }
     _LABELS = {
         "file":       "Create / Overwrite File",
@@ -917,7 +903,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
     _path_edit = None
     if action_type in ("file", "patch"):
         if base_dir:
-            base_note = QLabel(f"📁 Base path: <code>{base_dir}</code>")
+            base_note = QLabel(f"📁 基础路径： <code>{base_dir}</code>")
             base_note.setTextFormat(Qt.RichText)
             base_note.setStyleSheet(
                 f"color: {_fg_dim}; font-size: 9pt; "
@@ -925,22 +911,22 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
                 "border-radius: 3px; padding: 3px 6px;")
             lay.addWidget(base_note)
         path_row = QHBoxLayout()
-        path_row.addWidget(QLabel("Path:"))
+        path_row.addWidget(QLabel("路径�?))
         _path_edit = QLineEdit(target)
         _path_edit.setPlaceholderText("Relative to base path above, or absolute")
         _path_edit.setStyleSheet("font-size: 9pt;")
         path_row.addWidget(_path_edit, 1)
         lay.addLayout(path_row)
     elif action_type == "install":
-        pkg_lbl = QLabel(f"<b>Package(s):</b> <code>{target or content.strip()}</code>")
+        pkg_lbl = QLabel(f"<b>包：</b> <code>{target or content.strip()}</code>")
         pkg_lbl.setTextFormat(Qt.RichText)
         lay.addWidget(pkg_lbl)
     elif action_type == "run":
-        run_lbl = QLabel(f"<b>Language:</b> {target}")
+        run_lbl = QLabel(f"<b>语言�?/b> {target}")
         lay.addWidget(run_lbl)
     elif action_type == "git":
         cmd_first_line = content.strip().split("\n")[0]
-        cmd_lbl = QLabel(f"<b>Command:</b> <code>$ git {cmd_first_line}</code>")
+        cmd_lbl = QLabel(f"<b>命令�?/b> <code>$ git {cmd_first_line}</code>")
         cmd_lbl.setTextFormat(Qt.RichText)
         cmd_lbl.setWordWrap(True)
         cmd_lbl.setStyleSheet(
@@ -949,7 +935,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 4px 8px;")
         lay.addWidget(cmd_lbl)
         _cwd = base_dir or "~ (home directory)"
-        dir_lbl = QLabel(f"📁 Working directory: <code>{_cwd}</code>")
+        dir_lbl = QLabel(f"📁 工作目录�?code>{_cwd}</code>")
         dir_lbl.setTextFormat(Qt.RichText)
         dir_lbl.setStyleSheet(
             f"color: {_fg_dim}; font-size: 9pt; "
@@ -957,7 +943,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 3px 6px;")
         lay.addWidget(dir_lbl)
     elif action_type == "read":
-        path_lbl = QLabel(f"<b>File:</b> <code>{target}</code>")
+        path_lbl = QLabel(f"<b>文件�?/b> <code>{target}</code>")
         path_lbl.setTextFormat(Qt.RichText)
         path_lbl.setWordWrap(True)
         path_lbl.setStyleSheet(
@@ -966,7 +952,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 4px 8px;")
         lay.addWidget(path_lbl)
         if base_dir:
-            bd_lbl = QLabel(f"📁 Base path: <code>{base_dir}</code>")
+            bd_lbl = QLabel(f"📁 基础路径： <code>{base_dir}</code>")
             bd_lbl.setTextFormat(Qt.RichText)
             bd_lbl.setStyleSheet(
                 f"color: {_fg_dim}; font-size: 9pt; "
@@ -974,7 +960,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
                 "border-radius: 3px; padding: 3px 6px;")
             lay.addWidget(bd_lbl)
     elif action_type == "ls":
-        dir_lbl2 = QLabel(f"<b>Directory:</b> <code>{target or '.'}</code>")
+        dir_lbl2 = QLabel(f"<b>目录�?/b> <code>{target or '.'}</code>")
         dir_lbl2.setTextFormat(Qt.RichText)
         dir_lbl2.setWordWrap(True)
         dir_lbl2.setStyleSheet(
@@ -983,7 +969,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 4px 8px;")
         lay.addWidget(dir_lbl2)
         if base_dir:
-            bd_lbl = QLabel(f"📁 Base path: <code>{base_dir}</code>")
+            bd_lbl = QLabel(f"📁 基础路径： <code>{base_dir}</code>")
             bd_lbl.setTextFormat(Qt.RichText)
             bd_lbl.setStyleSheet(
                 f"color: {_fg_dim}; font-size: 9pt; "
@@ -993,10 +979,10 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
     elif action_type == "grep":
         _gparts  = target.split(":", 1)
         _pattern = _gparts[0]
-        _scope   = _gparts[1] if len(_gparts) > 1 else "(entire project)"
+        _scope   = _gparts[1] if len(_gparts) > 1 else "（整个项目）"
         grep_lbl = QLabel(
-            f"<b>Pattern:</b> <code>{_pattern}</code><br>"
-            f"<b>Scope:</b>&nbsp; <code>{_scope}</code>")
+            f"<b>模式�?/b> <code>{_pattern}</code><br>"
+            f"<b>范围�?/b>&nbsp; <code>{_scope}</code>")
         grep_lbl.setTextFormat(Qt.RichText)
         grep_lbl.setWordWrap(True)
         grep_lbl.setStyleSheet(
@@ -1005,7 +991,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 4px 8px;")
         lay.addWidget(grep_lbl)
         if base_dir:
-            bd_lbl = QLabel(f"📁 Base path: <code>{base_dir}</code>")
+            bd_lbl = QLabel(f"📁 基础路径： <code>{base_dir}</code>")
             bd_lbl.setTextFormat(Qt.RichText)
             bd_lbl.setStyleSheet(
                 f"color: {_fg_dim}; font-size: 9pt; "
@@ -1029,7 +1015,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 4px 8px;")
         lay.addWidget(del_lbl)
         warn_lbl = QLabel(
-            "⚠ &nbsp;<b>This action is irreversible.</b> "
+            "�?&nbsp;<b>This action is irreversible.</b> "
             + ("The entire directory tree will be permanently deleted."
                if _is_dir else "The file will be permanently deleted."))
         warn_lbl.setTextFormat(Qt.RichText)
@@ -1040,7 +1026,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 4px 8px;")
         lay.addWidget(warn_lbl)
         if base_dir:
-            bd_lbl = QLabel(f"📁 Base path: <code>{base_dir}</code>")
+            bd_lbl = QLabel(f"📁 基础路径： <code>{base_dir}</code>")
             bd_lbl.setTextFormat(Qt.RichText)
             bd_lbl.setStyleSheet(
                 f"color: {_fg_dim}; font-size: 9pt; "
@@ -1060,7 +1046,7 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
             "border-radius: 3px; padding: 4px 8px;")
         lay.addWidget(rn_lbl)
         if base_dir:
-            bd_lbl = QLabel(f"📁 Base path: <code>{base_dir}</code>")
+            bd_lbl = QLabel(f"📁 基础路径： <code>{base_dir}</code>")
             bd_lbl.setTextFormat(Qt.RichText)
             bd_lbl.setStyleSheet(
                 f"color: {_fg_dim}; font-size: 9pt; "
@@ -1084,11 +1070,11 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
                 _warn_parts = []
                 for _hdr, _llm_ln, _act_ln in _stale:
                     _warn_parts.append(
-                        f"&nbsp;&nbsp;• <code>{_hdr}</code>"
-                        f" — LLM wrote line&nbsp;<b>{_llm_ln}</b>,"
+                        f"&nbsp;&nbsp;�?<code>{_hdr}</code>"
+                        f" �?LLM wrote line&nbsp;<b>{_llm_ln}</b>,"
                         f" actual position: line&nbsp;<b>{_act_ln}</b>")
                 warn_lbl = QLabel(
-                    "⚠ &nbsp;<b>Stale line numbers in LLM diff</b> — the @@ headers "
+                    "�?&nbsp;<b>Stale line numbers in LLM diff</b> �?the @@ headers "
                     "below are incorrect, but the patch will be applied correctly "
                     "using content matching:<br>" + "<br>".join(_warn_parts))
                 warn_lbl.setTextFormat(Qt.RichText)
@@ -1121,13 +1107,13 @@ def show_confirm_dialog(parent, action_type, target, content, base_dir=None):
 
     # ── Buttons ─────────────────────────────────────────────────────────
     btns = QDialogButtonBox()
-    ok_btn = QPushButton(f"{icon} Execute")
+    ok_btn = QPushButton(f"{icon} 执行")
     ok_btn.setDefault(True)
     ok_btn.setStyleSheet(
         f"QPushButton {{ background: {_ok_bg}; color: {_ok_fg}; "
         f"border: 1px solid {_ok_bd}; border-radius: 3px; padding: 4px 16px; }}"
         f"QPushButton:hover {{ background: {_ok_hov}; }}")
-    cancel_btn = QPushButton("Cancel")
+    cancel_btn = QPushButton("取消")
     cancel_btn.setStyleSheet(
         "QPushButton { padding: 4px 16px; }")
     btns.addButton(ok_btn, QDialogButtonBox.AcceptRole)
@@ -1148,9 +1134,9 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
     entries: dict {block_idx: {action_type, target, content, run_direct, run_direct_chained}}
     Returns list of approved block_idx values (empty list = cancelled / nothing selected).
 
-    Upper area: scrollable list of action rows — click any row to preview its
+    Upper area: scrollable list of action rows �?click any row to preview its
     content below.  Checkbox controls whether the action is included in the run.
-    Lower area: content preview — diff (patch), code (run/file), command (git).
+    Lower area: content preview �?diff (patch), code (run/file), command (git).
     """
     from qtpy.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                                  QPushButton, QScrollArea, QWidget, QCheckBox,
@@ -1159,9 +1145,9 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
     from qtpy.QtGui import QFont
 
     _ICONS = {
-        "file": "📄", "patch": "🩹", "run": "▶", "install": "📦", "git": "⎇",
+        "file": "📄", "patch": "🩹", "run": "�?, "install": "📦", "git": "�?,
         "read": "📄", "ls": "📁", "grep": "🔍",
-        "delete": "🗑", "delete_dir": "🗑", "rename": "↪", "rename_dir": "↪",
+        "delete": "🗑", "delete_dir": "🗑", "rename": "�?, "rename_dir": "�?,
     }
     _COLORS = {
         "file":       "#4a9eff", "patch": "#80c040",
@@ -1186,7 +1172,7 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
     }
 
     _dark = _is_dialog_dark()
-    # Colour palette — dark vs light theme
+    # Colour palette �?dark vs light theme
     _bg         = "#1a1a1a" if _dark else "#ffffff"
     _bg2        = "#252525" if _dark else "#f0f0f0"
     _bg3        = "#1e1e1e" if _dark else "#f8f8f8"
@@ -1213,7 +1199,7 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
     lay = QVBoxLayout(dlg)
     lay.setSpacing(6)
 
-    hdr = QLabel("The following actions were requested by the LLM:")
+    hdr = QLabel("LLM 请求了以下操作：")
     hdr.setStyleSheet(f"color: {_fg_hdr}; font-size: 11px;")
     lay.addWidget(hdr)
 
@@ -1230,8 +1216,8 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
     inner_lay.setContentsMargins(0, 0, 0, 0)
     inner_lay.setSpacing(4)
 
-    checkboxes   = {}  # block_idx → QCheckBox
-    row_frames   = {}  # block_idx → QFrame
+    checkboxes   = {}  # block_idx �?QCheckBox
+    row_frames   = {}  # block_idx �?QFrame
     _sel         = [None]   # currently selected block_idx (mutable cell)
     _evt_filters = []       # keep event-filter objects alive
 
@@ -1299,11 +1285,11 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
                 _warn_parts = []
                 for _hdr, _llm_ln, _act_ln in _stale:
                     _warn_parts.append(
-                        f"&nbsp;&nbsp;• <code>{_hdr}</code>"
-                        f" — LLM wrote line&nbsp;<b>{_llm_ln}</b>,"
+                        f"&nbsp;&nbsp;�?<code>{_hdr}</code>"
+                        f" �?LLM wrote line&nbsp;<b>{_llm_ln}</b>,"
                         f" actual position: line&nbsp;<b>{_act_ln}</b>")
                 preview_warn.setText(
-                    "⚠ &nbsp;<b>Stale line numbers in LLM diff</b> — the @@ headers "
+                    "�?&nbsp;<b>Stale line numbers in LLM diff</b> �?the @@ headers "
                     "below are incorrect, but the patch will be applied correctly "
                     "using content matching:<br>" + "<br>".join(_warn_parts))
                 preview_warn.setVisible(True)
@@ -1314,7 +1300,7 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
             preview_warn.setVisible(False)
             _kind = "directory tree" if atype == "delete_dir" else "file"
             preview_edit.setPlainText(
-                f"⚠ Permanently delete {_kind}:\n\n  {tgt}\n\n"
+                f"�?Permanently delete {_kind}:\n\n  {tgt}\n\n"
                 + ("This will recursively remove all contents." if atype == "delete_dir"
                    else "This action cannot be undone."))
         elif atype in ("rename", "rename_dir"):
@@ -1353,14 +1339,14 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
         def eventFilter(self, obj, ev):
             if ev.type() == QEvent.MouseButtonPress and ev.button() == Qt.LeftButton:
                 _select_row(self._idx)
-            return False   # never consume — let checkbox handle itself
+            return False   # never consume �?let checkbox handle itself
 
     sorted_idxs = sorted(entries.keys())
     for idx in sorted_idxs:
         entry = entries[idx]
         atype  = entry["action_type"]
         tgt    = entry["target"]
-        icon   = _ICONS.get(atype, "•")
+        icon   = _ICONS.get(atype, "�?)
         color  = _COLORS.get(atype, "#aaa")
         verb   = _VERBS.get(atype, atype)
         content = entry.get("content", "")
@@ -1374,7 +1360,7 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
 
         if atype == "git":
             full_cmd    = content.strip().split("\n")[0]
-            cmd_preview = full_cmd[:60] + ("…" if len(full_cmd) > 60 else "")
+            cmd_preview = full_cmd[:60] + ("�? if len(full_cmd) > 60 else "")
             lbl_text    = f"{icon}  $ git {cmd_preview}"
             tooltip     = f"$ git {full_cmd}"
         elif atype == "run":
@@ -1388,13 +1374,13 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
             tooltip  = tgt
         elif atype in ("rename", "rename_dir"):
             new_path = content.strip().split("\n")[0]
-            lbl_text = f"{icon}  {verb}: {tgt} → {new_path}"
-            tooltip  = f"{tgt} → {new_path}"
+            lbl_text = f"{icon}  {verb}: {tgt} �?{new_path}"
+            tooltip  = f"{tgt} �?{new_path}"
         else:
             lbl_text  = f"{icon}  {verb}: {tgt}"
             tooltip   = tgt
         if len(lbl_text) > 74:
-            lbl_text = lbl_text[:71] + "…"
+            lbl_text = lbl_text[:71] + "�?
 
         lbl = QLabel(lbl_text)
         lbl.setToolTip(tooltip)
@@ -1432,7 +1418,7 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
     # ── Preview section ──────────────────────────────────────────────────────
     lay.addWidget(preview_hdr)
     lay.addWidget(preview_warn)      # stale-line-number warning (hidden by default)
-    lay.addWidget(preview_edit, 1)   # stretch factor 1 → takes remaining space
+    lay.addWidget(preview_edit, 1)   # stretch factor 1 �?takes remaining space
 
     # Auto-select the first row so the preview is populated immediately
     if sorted_idxs:
@@ -1451,13 +1437,13 @@ def show_batch_confirm_dialog(parent, entries, base_dir=""):
     # ── Buttons ──────────────────────────────────────────────────────────────
     btn_row = QHBoxLayout()
     btn_row.addStretch()
-    run_btn = QPushButton("Run selected")
+    run_btn = QPushButton("运行选中�?)
     run_btn.setDefault(True)
     run_btn.setStyleSheet(
         "QPushButton { color: #4ec970; border: 1px solid #4ec970; border-radius: 3px; "
         "padding: 4px 16px; background: transparent; }"
         "QPushButton:hover { background: #4ec97033; }")
-    cancel_btn = QPushButton("Cancel")
+    cancel_btn = QPushButton("取消")
     cancel_btn.setStyleSheet(
         f"QPushButton {{ color: {_fg_dim}; border: 1px solid {_border}; border-radius: 3px; "
         "padding: 4px 16px; background: transparent; }"

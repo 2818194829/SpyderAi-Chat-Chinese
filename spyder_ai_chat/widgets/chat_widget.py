@@ -4688,7 +4688,11 @@ class AIChatPanel(QWidget):
         return {**EDITOR_DEFAULTS, **self._load_state().get("editor", {})}
 
     def _apply_ui_font(self):
-        """Apply the UI font size setting to the entire chat panel."""
+        """Apply the UI font size setting to the panel via setFont.
+
+        setFont is safe to call at any time — it queues a font-change event
+        that propagates to child widgets during the next event-loop cycle.
+        """
         from qtpy.QtGui import QFont
         cfg = self._editor_cfg()
         pt = cfg.get("fs_ui", 9)

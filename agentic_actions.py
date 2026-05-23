@@ -250,164 +250,191 @@ def grep_files(pattern, base_dir, scope=""):
 
 # Preamble — four variants, one per autonomous mode
 _PROMPT_PREAMBLE_MANUAL = """\
-你可以通过使用特殊的代码围栏来执行直接操作。每个操作会在执行前通过批量对话框呈现给用户以获取明确确认。\
-结果不会自动转发——由用户决定将哪些内容发送回给你。"""
+You can take direct actions by using special code fences. Each action is \
+presented to the user in a batch dialog for explicit confirmation before \
+executing. Results are not automatically forwarded — the user decides what \
+to send back to you."""
 
 _PROMPT_PREAMBLE_SEMI = """\
-你可以通过使用特殊的代码围栏来执行直接操作。每个操作会在执行前通过批量对话框呈现给用户以获取明确确认。\
-执行后，结果会自动转发给你。"""
+You can take direct actions by using special code fences. Each action is \
+presented to the user in a batch dialog for explicit confirmation before \
+executing. After execution, results are automatically forwarded to you."""
 
 _PROMPT_PREAMBLE_FULL_CONFIRM = """\
-你可以通过使用特殊的代码围栏来执行直接操作。只读检查围栏（read:、ls:、grep:）\
-静默执行，其结果会自动转发给你。文件修改操作（file:、patch:、run:python、\
-install:、run:git、delete:、rename:）在执行前仍需要用户确认，之后结果会自动转发给你。"""
+You can take direct actions by using special code fences. Read-only inspection \
+fences (read:, ls:, grep:) execute silently and their results are forwarded to \
+you automatically. File-modifying actions (file:, patch:, run:python, \
+install:, run:git, delete:, rename:) still require user confirmation before \
+executing, after which results are forwarded to you automatically."""
 
 _PROMPT_PREAMBLE_FULL_SILENT = """\
-你可以通过使用特殊的代码围栏来执行直接操作。所有操作立即执行，无需任何用户确认，\
-结果会自动转发给你。"""
+You can take direct actions by using special code fences. All actions execute \
+immediately without any user confirmation, and results are forwarded to you \
+automatically."""
 
 _PROMPT_CLOSING = """\
-仅当用户明确要求你创建或修改文件、运行代码、安装包或与 git 交互时，才使用这些操作围栏。\
-始终在操作围栏之前解释你正在做什么。"""
+Use these action fences only when the user explicitly asks you to create or \
+modify files, run code, install packages, or interact with git. Always \
+explain what you are doing before the action fence."""
 
 # file: vs patch: rule — three variants depending on which fences are enabled
 _PROMPT_FILE_VS_PATCH_BOTH = """\
-重要规则——file vs patch：
-- 使用 `patch:` 围栏来编辑或修改已存在的文件。永远不要使用 `file:` 围栏完整重写已有文件。
-- 仅在创建尚不存在的新文件时使用 `file:` 围栏。
-- 当用户说"编辑"、"更改"、"更新"、"修复"、"重构"或"修改"文件时——始终生成 `patch:` 围栏，而不是 `file:` 围栏。"""
+IMPORTANT RULE — file vs patch:
+- Use a `patch:` fence to edit or modify an EXISTING file. Never rewrite an \
+existing file in full with a `file:` fence.
+- Use a `file:` fence ONLY when creating a brand new file that does not yet exist.
+- When the user says "edit", "change", "update", "fix", "refactor", or \
+"modify" a file — always produce a `patch:` fence, not a `file:` fence."""
 
 _PROMPT_FILE_ONLY_RULE = """\
-重要规则——file 围栏：
-- 仅使用 `file:` 围栏来创建尚不存在的新文件。永远不要用它来重写已有文件。"""
+IMPORTANT RULE — file fence:
+- Use a `file:` fence ONLY to create a brand new file that does not yet exist. \
+Never use it to rewrite an existing file."""
 
 _PROMPT_PATCH_ONLY_RULE = """\
-重要规则——patch 围栏：
-- 使用 `patch:` 围栏来编辑或修改已存在的文件。当用户说"编辑"、"更改"、"更新"、"修复"、\
-"重构"或"修改"文件时，始终生成 `patch:` 围栏。"""
+IMPORTANT RULE — patch fence:
+- Use a `patch:` fence to edit or modify an EXISTING file. Always produce a \
+`patch:` fence when the user says "edit", "change", "update", "fix", \
+"refactor", or "modify" a file."""
 
 # Per-fence sections
 _PROMPT_FILE = """\
-创建一个全新的文件（路径相对于项目根目录，或使用绝对路径）：
+Create a brand-new file (path relative to project root, or absolute):
 ```file:path/to/new_file.py
-# 完整的文件内容在此
+# full file content here
 ```"""
 
 _PROMPT_RUN_PYTHON = """\
-在 IPython 控制台中运行 Python 代码：
+Run Python code in the IPython console:
 ```run:python
 print("hello world")
 ```"""
 
 _PROMPT_INSTALL = """\
-安装 Python 包：
+Install a Python package:
 ```install:pip
 numpy pandas
 ```"""
 
 _PROMPT_PATCH = """\
-应用统一差异补丁来修改已存在的文件：
+Apply a unified diff patch to modify an EXISTING file:
 ```patch:path/to/file.py
 --- a/path/to/file.py
 +++ b/path/to/file.py
 @@ -1,3 +1,3 @@
- 上下文行
--旧行
-+新行
+ context line
+-old line
++new line
 ```"""
 
 # Git — two variants: manual (user attaches output) vs auto-send
 _PROMPT_GIT_MANUAL = """\
-在项目目录中运行 git 命令：
+Run a git command in the project directory:
 ```run:git
 log --oneline -10
 ```
-命令输出将内联显示。用户可以将它附加到聊天中供你读取和分析，或忽略它。\
-使用只读命令（log、diff、status、show、blame）检查仓库。\
-使用写入命令（commit、branch、checkout）执行操作。始终向用户展示你正在运行的命令及其原因。"""
+The command output will appear inline. The user can attach it to the chat so \
+you can read and reason about it, or dismiss it. Use read-only commands \
+(log, diff, status, show, blame) to inspect the repository. Use write \
+commands (commit, branch, checkout) to perform operations. Always show the \
+user what command you are running and why."""
 
 _PROMPT_GIT_AUTO = """\
-在项目目录中运行 git 命令：
+Run a git command in the project directory:
 ```run:git
 log --oneline -10
 ```
-命令输出会自动转发给你。使用只读命令（log、diff、status、show、blame）检查仓库。\
-使用写入命令（commit、branch、checkout）执行操作。始终向用户展示你正在运行的命令及其原因。"""
+The command output is automatically forwarded to you. Use read-only commands \
+(log, diff, status, show, blame) to inspect the repository. Use write \
+commands (commit, branch, checkout) to perform operations. Always show the \
+user what command you are running and why."""
 
 _PROMPT_READ = """\
-读取文件（完整内容）：
+Read a file (full content):
 ```read:path/to/file.py
 ```
-读取特定行范围（从 1 开始，包含两端）：
+Read a specific line range (1-based, inclusive):
 ```read:path/to/file.py:100-150
 ```
-结果始终以显示文件名和总行数的头部开始，例如"[file.py — 250 lines]"。\
-在读取大文件前使用小范围如":1-1"来了解总大小。"""
+The result always starts with a header showing the file name and total line \
+count, e.g. "[file.py — 250 lines]". Use a small range like ":1-1" to learn \
+the total size before reading a large file."""
 
 _PROMPT_LS = """\
-列出目录：
+List a directory:
 ```ls:some/directory/
 ```
-对于条目数 ≤ 50 的目录，会显示每个文本文件的行数。"""
+For directories with ≤ 50 entries the line count of each text file is shown."""
 
 _PROMPT_GREP = """\
-在所有项目文件中搜索正则表达式模式：
+Search for a regex pattern across all project files:
 ```grep:pattern
 ```
-在特定子目录中搜索：
+Search within a specific subdirectory:
 ```grep:pattern:src/
 ```
-结果以"文件:行号: 匹配文本"的格式返回。结果上限为 200 行。\
-在进行更改前使用 read:/ls:/grep: 探索项目——只请求你实际需要的文件，而不是请求完整的项目上下文。"""
+Results are returned as "file:line: matching text". Results are capped at 200 \
+lines. Use read:/ls:/grep: to explore the project before making changes — \
+request only the files you actually need rather than asking for full project context."""
 
 # Delete — two variants: confirmation required vs silent (full-silent mode)
 _PROMPT_DELETE_CONFIRM = """\
-删除单个文件（不可逆——用户将看到确认对话框）：
+Delete a single file (irreversible — the user will see a confirmation dialog):
 ```delete:path/to/file.py
 ```"""
 
 _PROMPT_DELETE_SILENT = """\
-删除单个文件（不可逆——立即执行无需确认）：
+Delete a single file (irreversible — executes immediately without confirmation):
 ```delete:path/to/file.py
 ```"""
 
 _PROMPT_DELETE_DIR_CONFIRM = """\
-递归删除整个目录树（不可逆——用户将看到确认对话框）：
+Delete an entire directory tree recursively (irreversible — the user will see \
+a confirmation dialog):
 ```delete_dir:path/to/directory/
 ```"""
 
 _PROMPT_DELETE_DIR_SILENT = """\
-递归删除整个目录树（不可逆——立即执行无需确认）：
+Delete an entire directory tree recursively (irreversible — executes \
+immediately without confirmation):
 ```delete_dir:path/to/directory/
 ```"""
 
 _PROMPT_RENAME = """\
-重命名或移动文件——将新路径放在围栏体中：
+Rename or move a file — put the new path in the fence body:
 ```rename:path/to/old_file.py
 path/to/new_file.py
 ```"""
 
 _PROMPT_RENAME_DIR = """\
-重命名或移动目录——将新路径放在围栏体中：
+Rename or move a directory — put the new path in the fence body:
 ```rename_dir:path/to/old_dir/
 path/to/new_dir/
 ```"""
 
 _PROMPT_RENAME_NOTE = """\
-路径相对于项目根目录，或使用绝对路径。rename:/rename_dir: 也可以将文件或目录移动到不同位置（相当于 mv）。"""
+Paths are relative to the project root, or absolute. rename:/rename_dir: can \
+also move a file or directory to a different location (equivalent to mv)."""
 
 # Inspection discipline — two variants: manual (user clicks "Send to LLM") vs auto-send
 _PROMPT_INSPECTION_DISCIPLINE_MANUAL = """\
-重要——检查围栏纪律：当你输出 read:、ls: 或 grep: 围栏时，请在围栏后立即结束你的回复。\
-在真正看到内容之前，不要推测或描述内容。用户必须点击"发送给 LLM"来将结果转发给你；\
-他们也可以忽略，在这种情况下你将不会收到输出。你可以在一次回复中输出多个检查围栏\
-（它们将一起执行），但不要有其他内容——没有评论、没有假设、没有部分答案。等待结果。"""
+IMPORTANT — inspection fence discipline: when you output a read:, ls:, or \
+grep: fence, end your response immediately after the fence. Do NOT speculate \
+about or describe the contents before you have actually seen them. The user \
+must click "Send to LLM" to forward the results to you; they may also dismiss \
+them, in which case you will not receive the output. You may output multiple \
+inspection fences in one response (they will all be executed together), but \
+nothing else — no commentary, no assumptions, no partial answers. Wait for \
+the results."""
 
 _PROMPT_INSPECTION_DISCIPLINE_AUTO = """\
-重要——检查围栏纪律：当你输出 read:、ls: 或 grep: 围栏时，请在围栏后立即结束你的回复。\
-在真正看到内容之前，不要推测或描述内容。结果会自动转发给你，然后你可以分析它们。\
-你可以在一次回复中输出多个检查围栏（它们将一起执行），但不要有其他内容——\
-没有评论、没有假设、没有部分答案。等待结果。"""
+IMPORTANT — inspection fence discipline: when you output a read:, ls:, or \
+grep: fence, end your response immediately after the fence. Do NOT speculate \
+about or describe the contents before you have actually seen them. Results are \
+automatically forwarded to you and you can then analyse them. You may output \
+multiple inspection fences in one response (they will all be executed \
+together), but nothing else — no commentary, no assumptions, no partial \
+answers. Wait for the results."""
 
 
 def build_agentic_system_prompt(agentic_cfg: dict) -> str:
