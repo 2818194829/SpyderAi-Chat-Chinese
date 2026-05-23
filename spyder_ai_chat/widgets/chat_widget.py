@@ -92,21 +92,21 @@ def _agentic_action_labels(executed: list) -> list:
 # Styles for the inference params summary bar label — called at apply time
 def _params_bar_idle_style():
     if _is_dark_theme():
-        return ("QPushButton { color: #aaa; font-size: 9px; text-align: left; "
+        return ("QPushButton { color: #aaa; font-size: 11px; text-align: left; "
                 "border: none; padding: 0 4px; }"
                 "QPushButton:hover { color: #eee; }")
     else:
-        return ("QPushButton { color: #444; font-size: 9px; text-align: left; "
+        return ("QPushButton { color: #444; font-size: 11px; text-align: left; "
                 "border: none; padding: 0 4px; }"
                 "QPushButton:hover { color: #111; }")
 
 def _params_bar_active_style():
     if _is_dark_theme():
-        return ("QPushButton { color: #c8a000; font-size: 9px; text-align: left; "
+        return ("QPushButton { color: #c8a000; font-size: 11px; text-align: left; "
                 "border: none; padding: 0 4px; }"
                 "QPushButton:hover { color: #ffe080; }")
     else:
-        return ("QPushButton { color: #7a5000; font-size: 9px; text-align: left; "
+        return ("QPushButton { color: #7a5000; font-size: 11px; text-align: left; "
                 "border: none; padding: 0 4px; }"
                 "QPushButton:hover { color: #4a3000; }")
 
