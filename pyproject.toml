@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SpyderAi-Chat-Chinese"
-version = "0.8.9"
+version = "0.8.10"
 description = "OpenAI-compatible AI chat pane + FIM completion for Spyder 6 — 中文汉化版"
 requires-python = ">=3.9"
 dependencies = ["spyder>=6.0"]
