@@ -279,6 +279,7 @@ PROVIDER_GROUPS = [
 
 # Default font size configuration
 EDITOR_DEFAULTS = {
+    "fs_ui":      9,   # 界面 UI 字体
     "fs_base":    10,
     "fs_code":    10,
     "fs_heading": 14,
@@ -830,20 +831,33 @@ class SettingsDialog(QDialog):
         ef.setSpacing(8)
         editor_outer.addLayout(ef)
 
-        def _spin(key):
+        def _spin(key, max_val=24):
             s = QSpinBox()
-            s.setRange(6, 24)
+            s.setRange(6, max_val)
             s.setValue(editor_cfg.get(key, EDITOR_DEFAULTS[key]))
             s.setSuffix(" pt")
             s.setFixedWidth(83)
             return s
 
+        self.fs_ui      = _spin("fs_ui", max_val=32)
         self.fs_base    = _spin("fs_base")
         self.fs_code    = _spin("fs_code")
-        self.fs_heading = _spin("fs_heading")
+        self.fs_heading = _spin("fs_heading", max_val=48)
         self.fs_list    = _spin("fs_list")
         self.fs_table   = _spin("fs_table")
         self.fs_think   = _spin("fs_think")
+
+        # ── Separator: global UI font ─────────────────────────────────
+        ui_sep = QFrame(editor_w)
+        ui_sep.setFrameShape(QFrame.HLine)
+        ui_sep.setStyleSheet("color: #444; margin: 4px 0;")
+        ef.addRow(ui_sep)
+
+        ui_note = QLabel("以下设置影响整个插件界面（按钮、标签、输入框等）。")
+        ui_note.setStyleSheet("color: #888; font-size: 9pt;")
+        ef.addRow(ui_note)
+
+        ef.addRow("界面 UI 字体：", self.fs_ui)
 
         ef.addRow("基础文本：", self.fs_base)
         ef.addRow("代码块：", self.fs_code)
@@ -2752,6 +2766,7 @@ class SettingsDialog(QDialog):
             "azure_deployment":    self._azure_dep_edit.text().strip(),
             "azure_api_version":   self._azure_ver_combo.currentText(),
             "editor": {
+                "fs_ui":      self.fs_ui.value(),
                 "fs_base":    self.fs_base.value(),
                 "fs_code":    self.fs_code.value(),
                 "fs_heading": self.fs_heading.value(),

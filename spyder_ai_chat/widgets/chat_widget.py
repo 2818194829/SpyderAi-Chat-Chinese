@@ -3592,6 +3592,7 @@ class AIChatPanel(QWidget):
         from qtpy.QtWidgets import QScrollArea
         self._history = _ChatHistory()
         self._history._font_cfg = self._editor_cfg()
+        self._apply_ui_font()
         self._history._messages_ref = self._messages   # live reference for compaction blocks
         self._history.setMinimumWidth(400)
         self._history.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -4686,6 +4687,15 @@ class AIChatPanel(QWidget):
     def _editor_cfg(self):
         return {**EDITOR_DEFAULTS, **self._load_state().get("editor", {})}
 
+    def _apply_ui_font(self):
+        """Apply the UI font size setting to the entire chat panel."""
+        from qtpy.QtGui import QFont
+        cfg = self._editor_cfg()
+        pt = cfg.get("fs_ui", 9)
+        font = QFont()
+        font.setPointSize(pt)
+        self.setFont(font)
+
     def _agentic_cfg(self):
         raw = dict(self._load_state().get("agentic", {}))
         # Migrate from pre-0.8.4 auto_confirm bool → autonomous_mode string
@@ -5349,6 +5359,7 @@ class AIChatPanel(QWidget):
         data = load_chat(filename, collection=collection)
         if data is None:
             self._status.setText("⚠ 无法加载聊天。")
+            self._hide_loading_overlay()
             return
         # Save current chat first if it has content and saving is enabled
         if self._messages and self._history_cfg().get("autosave", True):
@@ -6025,6 +6036,7 @@ class AIChatPanel(QWidget):
                 default_system_prompt_id = v["default_system_prompt_id"],
             )
             self._history._font_cfg = self._editor_cfg()
+            self._apply_ui_font()
             self._fetching = False
             self._status.setText("设置已保存。")
             self._fetch_models()
